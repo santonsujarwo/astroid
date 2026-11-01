@@ -43,7 +43,7 @@ Open the Astro URL shown in the terminal (normally http://localhost:4321). The d
 - Edit section label, eyebrow, heading, body, image URL, button label, button URL and layout variant.
 - Save website and section content to PostgreSQL.
 - Preview the current section content in a new tab.
-- Register template metadata in the browser prototype store.
+- Register template metadata in PostgreSQL when the API is configured.
 - Browse and select the Business Starter template when creating a site.
 
 If the API is not configured, the dashboard falls back to browser localStorage for evaluation. The status indicator distinguishes PostgreSQL connection from local prototype mode.
