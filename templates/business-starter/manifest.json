@@ -1,0 +1,18 @@
+{
+  "id": "business-starter",
+  "name": "Business Starter",
+  "version": "1.0.0",
+  "description": "A flexible foundation for service businesses.",
+  "runtime": "astro",
+  "entry": "src/layouts/BaseLayout.astro",
+  "sections": [
+    { "type": "hero", "label": "Hero", "fields": ["eyebrow", "heading", "body", "image", "button", "link"], "layouts": ["split", "centered"] },
+    { "type": "about", "label": "About us", "fields": ["eyebrow", "heading", "body", "image"], "layouts": ["standard", "split"] },
+    { "type": "services", "label": "Services", "fields": ["heading", "body"], "layouts": ["cards"] },
+    { "type": "features", "label": "Why choose us", "fields": ["heading", "body"], "layouts": ["cards", "split"] },
+    { "type": "testimonials", "label": "Testimonials", "fields": ["heading", "body"], "layouts": ["cards"] },
+    { "type": "faq", "label": "FAQ", "fields": ["heading", "body"], "layouts": ["standard"] },
+    { "type": "cta", "label": "Call to action", "fields": ["heading", "body", "button", "link"], "layouts": ["centered"] },
+    { "type": "contact", "label": "Contact", "fields": ["heading", "body", "button", "link"], "layouts": ["centered", "split"] }
+  ]
+}
