@@ -1,21 +1,32 @@
 {
   "name": "astroid",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "astro dev",
+    "dev:api": "tsx watch apps/api/src/server.ts",
     "build": "astro build",
-    "preview": "astro preview"
+    "build:api": "tsc -p apps/api/tsconfig.json",
+    "preview": "astro preview",
+    "db:migrate": "tsx apps/api/src/migrate.ts"
   },
   "dependencies": {
     "@astrojs/react": "^4.3.0",
     "@tailwindcss/vite": "^4.1.0",
+    "@octokit/rest": "^21.1.1",
     "astro": "^5.13.0",
+    "fastify": "^5.2.1",
     "lucide-react": "^0.468.0",
+    "pg": "^8.13.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwindcss": "^4.1.0"
+    "zod": "^3.24.2"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@types/pg": "^8.11.11",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
 }
