@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import Fastify from 'fastify';
 import pg from 'pg';
 import { z } from 'zod';
