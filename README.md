@@ -1,55 +1,95 @@
 # Astroid — Static Website Publisher
 
-Astroid is a multi-site workspace for creating, editing and publishing independent static websites. This repository currently contains the first interactive product prototype.
+Astroid is a multi-site workspace for building and publishing independent Astro websites. The repository now contains an interactive section editor, a PostgreSQL API, a code-defined template manifest, and the first GitHub publishing vertical slice.
 
-## Run locally
-
-Requirements: Node.js 20.3+ and npm.
+## Dashboard
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the local URL printed by Astro (normally http://localhost:4321).
+Open the Astro URL shown in the terminal (normally http://localhost:4321).
 
-Build and preview:
+The current dashboard editor supports:
+- Multiple website records in a workspace.
+- Create a website and open its section-based editor.
+- Add and remove sections.
+- Edit section label, eyebrow, heading, body, image URL, button label, button URL and layout variant.
+- Save section data in the browser prototype store.
+- Preview the current page using its section content.
+- Register template metadata in the browser prototype store.
+- Browse the Business Starter template and select it when creating a site.
+
+The dashboard is still using browser localStorage for its own UI state. It does not yet authenticate to or consume the API. Do not mistake the frontend local save indicator for a PostgreSQL save.
+
+## Backend API
+
+Configure environment variables from `.env.example`:
+
+- `DATABASE_URL`: PostgreSQL connection string.
+- `ASTROID_API_KEY`: long random secret for API access.
+- `ASTROID_GITHUB_TOKEN`: GitHub fine-grained personal access token for repository creation and content writes.
+- `ASTROID_GITHUB_OWNER`: optional owner override.
+
+Run the API and migration:
+
+```bash
+npm run db:migrate
+npm run dev:api
+```
+
+API defaults to `http://localhost:8787`.
+
+All endpoints except `GET /health` require an `x-astroid-key` header.
+
+- `GET /api/sites`
+- `POST /api/sites`
+- `GET /api/sites/:id`
+- `PUT /api/sites/:id`
+- `POST /api/sites/:id/publish`
+
+Example create request:
+
+```bash
+curl -X POST http://localhost:8787/api/sites \
+  -H "content-type: application/json" \
+  -H "x-astroid-key: $ASTROID_API_KEY" \
+  -d '{"name":"Demo Studio","description":"A sample business website."}'
+```
+
+## GitHub publishing vertical slice
+
+The API publish endpoint:
+1. Loads the site's page document from PostgreSQL.
+2. Generates an independent Astro project.
+3. Creates a GitHub repository when one is not already linked.
+4. Writes the generated files and a GitHub Pages Actions workflow in one Git commit.
+5. Stores the repository and commit reference in PostgreSQL.
+
+The generated site is standalone and has no runtime dependency on Astroid.
+
+The GitHub token needs repository creation and contents write permissions. GitHub Pages must be enabled with Actions as the deployment source if it is not automatically enabled for the generated repository. The included workflow builds the Astro project and deploys its `dist` output.
+
+## Template registry
+
+`templates/business-starter/manifest.json` defines the first code-based template and its eight section types, editable fields and supported layouts. The template registry table pins template ID and version. Template package validation and a complete component renderer are still to be implemented.
+
+## Build checks
 
 ```bash
 npm run build
-npm run preview
+npm run build:api
 ```
 
-## Prototype scope (v0.1.0)
+GitHub Actions runs both checks on pushes and pull requests to `main`.
 
-- Multi-site dashboard with example projects.
-- Create a website and open its section-based editor.
-- Edit website name, domain, hero heading and description.
-- Add and remove page sections.
-- Save draft data to browser localStorage.
-- Open a simple page preview in a new tab.
-- Dashboard views for websites, templates, activity and settings.
+## Production hardening still required
 
-## Important prototype boundaries
-
-This is a frontend interaction prototype, not yet the production publishing platform. The following are not implemented yet:
-
-- GitHub OAuth / GitHub App connection and repository provisioning.
-- PostgreSQL persistence, API and authentication.
-- Component/template registry and version pinning.
-- Astro site generator for each managed website.
-- Build worker, GitHub Actions deployment, deploy status and rollback.
-- Multi-user permissions, audit persistence and production security controls.
-
-The Publish action is intentionally labelled as demo-only; it does not push code or deploy a website. Prototype edits are stored only in the current browser.
-
-## Product direction
-
-- Multi-site platform for personal and client projects.
-- Astro + React + Tailwind dashboard.
-- Section-based editor.
-- Hybrid template architecture: shared components, template-specific sections and website extensions.
-- PostgreSQL as operational draft source of truth; GitHub as synchronized source artifact and version history.
-- Each generated website is a standalone Astro project and has no runtime dependency on the dashboard.
-
-See the technical specification documents in the project planning package for the proposed architecture and data model.
+Before exposing this system beyond a trusted personal environment:
+- Connect the dashboard to the API through a server-side session; never ship the API key to browser code.
+- Add user authentication, workspace membership and per-site authorization.
+- Replace the personal access token with GitHub App installation tokens and OAuth installation flow.
+- Add isolated build workers, deploy status polling, webhook signature verification, rate limits and audit retention.
+- Add explicit conflict handling between database revisions and external GitHub commits.
+- Add automated tests for schema validation, generator output and GitHub failure recovery.
