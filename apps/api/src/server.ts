@@ -89,7 +89,7 @@ app.post('/api/sites/:id/publish', async (request, reply) => {
   if (!site) return reply.code(404).send({error:'Site not found'});
   const doc = documentSchema.parse(site.document) as PageDocument;
   const octokit = new Octokit({auth:token});
-  const owner = process.env.ASTROID_GITHUB_OWNER || (await octokit.users.getAuthenticated()).data.login;
+  const owner = (await octokit.users.getAuthenticated()).data.login;
   const repoName = site.github_repo || slugify(site.name) + '-' + site.id.slice(0,8);
   let repo;
   try {
