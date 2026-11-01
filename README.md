@@ -1,95 +1,96 @@
 # Astroid — Static Website Publisher
 
-Astroid is a multi-site workspace for building and publishing independent Astro websites. The repository now contains an interactive section editor, a PostgreSQL API, a code-defined template manifest, and the first GitHub publishing vertical slice.
+Astroid is a multi-site workspace for building and publishing independent Astro websites. The current implementation includes a section-content editor, a PostgreSQL REST API, a code-defined template manifest, and the first GitHub publishing vertical slice.
 
-## Dashboard
+## Requirements
+
+- Node.js 20+
+- PostgreSQL 14+
+- A GitHub token for publishing (optional until you publish a site)
+
+## Configure the application
+
+```bash
+cp .env.example .env
+```
+
+Set a strong random value for `ASTROID_API_KEY` in `.env`. Use the same key for the dashboard proxy and API server. Configure `DATABASE_URL`. Add a GitHub token with repository creation, Contents write and Workflows write permissions when you are ready to publish.
+
+## Start locally
+
+Terminal 1 — database schema and API:
 
 ```bash
 npm install
-npm run dev
-```
-
-Open the Astro URL shown in the terminal (normally http://localhost:4321).
-
-The current dashboard editor supports:
-- Multiple website records in a workspace.
-- Create a website and open its section-based editor.
-- Add and remove sections.
-- Edit section label, eyebrow, heading, body, image URL, button label, button URL and layout variant.
-- Save section data in the browser prototype store.
-- Preview the current page using its section content.
-- Register template metadata in the browser prototype store.
-- Browse the Business Starter template and select it when creating a site.
-
-The dashboard is still using browser localStorage for its own UI state. It does not yet authenticate to or consume the API. Do not mistake the frontend local save indicator for a PostgreSQL save.
-
-## Backend API
-
-Configure environment variables from `.env.example`:
-
-- `DATABASE_URL`: PostgreSQL connection string.
-- `ASTROID_API_KEY`: long random secret for API access.
-- `ASTROID_GITHUB_TOKEN`: GitHub fine-grained personal access token for repository creation and content writes.
-- `ASTROID_GITHUB_OWNER`: optional owner override.
-
-Run the API and migration:
-
-```bash
 npm run db:migrate
 npm run dev:api
 ```
 
-API defaults to `http://localhost:8787`.
+Terminal 2 — dashboard:
 
-All endpoints except `GET /health` require an `x-astroid-key` header.
+```bash
+npm run dev
+```
 
+Open the Astro URL shown in the terminal (normally http://localhost:4321). The dashboard calls its own server-side `/api` proxy; the API key is never sent to browser JavaScript.
+
+## Current dashboard functionality
+
+- Manage multiple websites in one workspace.
+- Create a website and save it to PostgreSQL when the API is configured.
+- Add and remove page sections.
+- Open an individual section editor.
+- Edit section label, eyebrow, heading, body, image URL, button label, button URL and layout variant.
+- Save website and section content to PostgreSQL.
+- Preview the current section content in a new tab.
+- Register template metadata in the browser prototype store.
+- Browse and select the Business Starter template when creating a site.
+
+If the API is not configured, the dashboard falls back to browser localStorage for evaluation. The status indicator distinguishes PostgreSQL connection from local prototype mode.
+
+## Backend API
+
+The Fastify API defaults to `http://localhost:8787`.
+
+- `GET /health`
 - `GET /api/sites`
 - `POST /api/sites`
 - `GET /api/sites/:id`
 - `PUT /api/sites/:id`
 - `POST /api/sites/:id/publish`
 
-Example create request:
-
-```bash
-curl -X POST http://localhost:8787/api/sites \
-  -H "content-type: application/json" \
-  -H "x-astroid-key: $ASTROID_API_KEY" \
-  -d '{"name":"Demo Studio","description":"A sample business website."}'
-```
+All API endpoints except `GET /health` require an `x-astroid-key` header. The Astro server-side proxy adds this header without exposing the key to the browser.
 
 ## GitHub publishing vertical slice
 
-The API publish endpoint:
-1. Loads the site's page document from PostgreSQL.
+The publish endpoint:
+1. Loads a site's page document from PostgreSQL.
 2. Generates an independent Astro project.
-3. Creates a GitHub repository when one is not already linked.
-4. Writes the generated files and a GitHub Pages Actions workflow in one Git commit.
+3. Creates a GitHub repository if one is not already linked.
+4. Writes the generated source and a GitHub Pages Actions workflow in one Git commit.
 5. Stores the repository and commit reference in PostgreSQL.
 
-The generated site is standalone and has no runtime dependency on Astroid.
-
-The GitHub token needs repository creation and contents write permissions. GitHub Pages must be enabled with Actions as the deployment source if it is not automatically enabled for the generated repository. The included workflow builds the Astro project and deploys its `dist` output.
+The generated website is standalone and has no runtime dependency on Astroid. The included GitHub Actions workflow builds the generated Astro site and deploys its `dist` directory. GitHub Pages must be enabled with Actions as its deployment source if it is not automatically enabled for the new repository.
 
 ## Template registry
 
-`templates/business-starter/manifest.json` defines the first code-based template and its eight section types, editable fields and supported layouts. The template registry table pins template ID and version. Template package validation and a complete component renderer are still to be implemented.
+`templates/business-starter/manifest.json` defines the first code-based template and its eight section types, editable fields and supported layouts. The database stores template IDs and versions. Full template package validation, visual variants and a version-aware component renderer remain future implementation work.
 
-## Build checks
+## Build and production start
 
 ```bash
 npm run build
 npm run build:api
+npm run start
 ```
 
-GitHub Actions runs both checks on pushes and pull requests to `main`.
+GitHub Actions runs the dashboard and API build checks on pushes and pull requests to `main`.
 
 ## Production hardening still required
 
 Before exposing this system beyond a trusted personal environment:
-- Connect the dashboard to the API through a server-side session; never ship the API key to browser code.
 - Add user authentication, workspace membership and per-site authorization.
-- Replace the personal access token with GitHub App installation tokens and OAuth installation flow.
-- Add isolated build workers, deploy status polling, webhook signature verification, rate limits and audit retention.
+- Replace the personal access token with GitHub App installation tokens and an installation flow.
+- Add isolated build workers, deployment status polling, webhook signature verification, rate limits and audit retention.
 - Add explicit conflict handling between database revisions and external GitHub commits.
 - Add automated tests for schema validation, generator output and GitHub failure recovery.
