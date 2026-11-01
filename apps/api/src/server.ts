@@ -105,9 +105,12 @@ app.post('/api/sites/:id/publish', async (request, reply) => {
   })))});
   const commit = await octokit.git.createCommit({owner,repo:repoName,message:'Publish website from Astroid',tree:tree.data.sha,parents:[base]});
   await octokit.git.updateRef({owner,repo:repoName,ref:'heads/'+repo.default_branch,sha:commit.data.sha});
+  let pagesEnabled = true;
+  try { await octokit.repos.createPagesSite({owner,repo:repoName,build_type:'workflow'}); }
+  catch (error) { pagesEnabled = false; app.log.warn({error}, 'GitHub Pages could not be enabled automatically; enable Pages with Actions in repository settings.'); }
   await pool.query('UPDATE sites SET status=\'published\',github_owner=$2,github_repo=$3,github_url=$4,published_commit=$5,updated_at=now() WHERE id=$1',[id,owner,repoName,repo.html_url,commit.data.sha]);
   await pool.query('INSERT INTO activity_log(site_id,action,detail) VALUES($1,\'site.published\',$2)',[id,JSON.stringify({repository:repo.html_url,commit:commit.data.sha})]);
-  return {ok:true,repository:repo.html_url,commit:commit.data.sha,buildWorkflow:'Add a GitHub Actions Astro deployment workflow to connect a hosting provider.'};
+  return {ok:true,repository:repo.html_url,commit:commit.data.sha,pagesEnabled,message:pagesEnabled?'Source committed; GitHub Pages deployment workflow has been configured.':'Source committed; enable GitHub Pages with Actions in repository settings.'};
 });
 
 app.setErrorHandler((error, _request, reply) => {
