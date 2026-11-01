@@ -30,6 +30,28 @@ app.addHook('onRequest', async (request, reply) => {
 
 app.get('/health', async () => ({ ok:true, service:'astroid-api', database: await pool.query('SELECT 1').then(()=> 'connected').catch(()=> 'unavailable') }));
 
+app.get('/api/templates', async () => {
+  const { rows } = await pool.query('SELECT id,name,version,package_path,manifest,enabled,created_at FROM templates WHERE enabled=true ORDER BY name');
+  return { templates: rows };
+});
+
+app.post('/api/templates', async (request, reply) => {
+  const schema = z.object({
+    id:z.string().min(2).regex(/^[a-z0-9-]+$/),
+    name:z.string().min(1),
+    version:z.string().min(1),
+    packagePath:z.string().min(1),
+    description:z.string().optional()
+  });
+  const input = schema.parse(request.body);
+  const manifest = { description:input.description || '', registeredFromDashboard:true };
+  const { rows } = await pool.query(
+    'INSERT INTO templates(id,name,version,package_path,manifest) VALUES($1,$2,$3,$4,$5) ON CONFLICT(id,version) DO UPDATE SET name=EXCLUDED.name,package_path=EXCLUDED.package_path,manifest=EXCLUDED.manifest,enabled=true RETURNING *',
+    [input.id,input.name,input.version,input.packagePath,JSON.stringify(manifest)]
+  );
+  return reply.code(201).send({template:rows[0]});
+});
+
 app.get('/api/sites', async () => {
   const { rows } = await pool.query('SELECT s.*, p.id AS page_id, p.document, p.revision FROM sites s LEFT JOIN pages p ON p.site_id=s.id AND p.slug=\'/\' ORDER BY s.created_at DESC');
   return { sites: rows };
